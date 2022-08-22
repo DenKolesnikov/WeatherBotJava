@@ -18,6 +18,9 @@ import java.util.List;
 
 public class WeatherBot extends TelegramLongPollingBot {
     private Message message;
+    private final Weather CURRENT_WEATHER = new Weather();
+    private final Forecast WEEK_FORECAST = new Forecast();
+
 
     public static void main(String[] args) throws TelegramApiException {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
@@ -51,34 +54,35 @@ public class WeatherBot extends TelegramLongPollingBot {
 
                 if (text.equals("/start")) {
                     setKeyboardButton(sendMessage);
-                }
-                else setInlineKeyboard(sendMessage);
+                } else setInlineKeyboard(sendMessage);
 
             }
 
         } else if (update.hasCallbackQuery()) {
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            CallbackQuery callbackQuery = update.getCallbackQuery();
-            String data = callbackQuery.getData();
+            CallbackQuery callback = update.getCallbackQuery();
+            String data = callback.getData();
             SendMessage sendMessageCallback = new SendMessage();
+
             if (data.contains("current")) {
                 sendMessageCallback.setChatId(chatId);
                 try {
-                    sendMessageCallback.setText(Weather.getWeather(data.replace("current", "")));
+                    sendMessageCallback.setText(CURRENT_WEATHER.getWeather(data.replace("current", "")));
                 } catch (IOException e) {
                     sendMessageCallback.setText("The city is not found!");
                 }
-
             } else if (data.contains("forecast")) {
+
                 sendMessageCallback.setChatId(chatId);
                 try {
-                    sendMessageCallback.setText(Forecast.getForecast(data.replace("forecast", "")));
+                    sendMessageCallback.setText(WEEK_FORECAST.getForecast(data.replace("forecast", "")));
                 } catch (IOException e) {
                     sendMessageCallback.setText("The city is not found!");
                 }
             }
             try {
                 execute(sendMessageCallback);
+
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -88,19 +92,20 @@ public class WeatherBot extends TelegramLongPollingBot {
 
 
     private void setKeyboardButton(SendMessage sendButton) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-        sendButton.setReplyMarkup(replyKeyboardMarkup);
-        replyKeyboardMarkup.setSelective(true);
-        replyKeyboardMarkup.setResizeKeyboard(true);
-        replyKeyboardMarkup.setOneTimeKeyboard(false);
-
-        List<KeyboardRow> keyboardStart = new ArrayList<>();
+        ReplyKeyboardMarkup replyKeyboard = new ReplyKeyboardMarkup();
         KeyboardRow startButton = new KeyboardRow();
+        List<KeyboardRow> keyboardStart = new ArrayList<>();
+
+        sendButton.setReplyMarkup(replyKeyboard);
+        replyKeyboard.setSelective(true);
+        replyKeyboard.setResizeKeyboard(true);
+        replyKeyboard.setOneTimeKeyboard(false);
+
         startButton.add(new KeyboardButton("/start"));
         keyboardStart.add(startButton);
-        replyKeyboardMarkup.setKeyboard(keyboardStart);
-        sendButton.setReplyMarkup(replyKeyboardMarkup);
-        sendButton.setText("Enter a city, please:");
+        replyKeyboard.setKeyboard(keyboardStart);
+        sendButton.setReplyMarkup(replyKeyboard);
+        sendButton.setText("Please, enter a city:");
         sendButton.setChatId(message.getChatId());
         try {
             execute(sendButton);
@@ -110,24 +115,28 @@ public class WeatherBot extends TelegramLongPollingBot {
     }
 
     private void setInlineKeyboard(SendMessage sendInline) {
+        InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup();
+        InlineKeyboardButton currentWeatherButton = new InlineKeyboardButton();
+        InlineKeyboardButton forecastButton = new InlineKeyboardButton();
+        List<InlineKeyboardButton> currentWeatherRow = new ArrayList<>();
+        List<InlineKeyboardButton> forecastRow = new ArrayList<>();
+        List<List<InlineKeyboardButton>> buttonsRow = new ArrayList<>();
+
         sendInline.setText(message.getText());
         sendInline.setChatId(message.getChatId());
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton currentButton = new InlineKeyboardButton();
-        currentButton.setText("Current weather");
-        currentButton.setCallbackData(message.getText() + "current");
-        InlineKeyboardButton forecastButton = new InlineKeyboardButton();
+
+        currentWeatherButton.setText("Current weather");
+        currentWeatherButton.setCallbackData(message.getText() + "current");
+
         forecastButton.setText("5-day forecast");
         forecastButton.setCallbackData(message.getText() + "forecast");
-        List<InlineKeyboardButton> buttonsUp = new ArrayList<>();
-        List<InlineKeyboardButton> buttonsDown = new ArrayList<>();
-        buttonsUp.add(currentButton);
-        buttonsDown.add(forecastButton);
-        List<List<InlineKeyboardButton>> row = new ArrayList<>();
-        row.add(buttonsUp);
-        row.add(buttonsDown);
-        inlineKeyboardMarkup.setKeyboard(row);
-        sendInline.setReplyMarkup(inlineKeyboardMarkup);
+
+        currentWeatherRow.add(currentWeatherButton);
+        forecastRow.add(forecastButton);
+        buttonsRow.add(currentWeatherRow);
+        buttonsRow.add(forecastRow);
+        inlineKeyboard.setKeyboard(buttonsRow);
+        sendInline.setReplyMarkup(inlineKeyboard);
         try {
             execute(sendInline);
 

@@ -1,3 +1,4 @@
+
 import java.util.HashMap;
 
 public class ModelForecast {
@@ -18,7 +19,7 @@ class City {
 class List {
 
     public MainForecast main;
-    private HashMap[] weather;
+    public HashMap[] weather;
 
     private String dt_txt;
 
@@ -38,7 +39,7 @@ class List {
 
 
 class MainForecast {
-    private double temp;
+    public double temp;
 
 
     public double getTemp() {

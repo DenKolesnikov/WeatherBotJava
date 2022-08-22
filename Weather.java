@@ -6,37 +6,32 @@ import java.util.Scanner;
 
 
 public class Weather {
-    private static ModelWeather modelWeather;
-    private static String resultWeather;
 
+    private final Gson GSON = new Gson();
 
-    public static String getWeather(String message) throws IOException {
-        requestWeather(message);
-        parseWeather(resultWeather);
-
-        return "City: " + modelWeather.getName() + "\n" +
-                "Temperature : " + Math.round(modelWeather.main.getTemp()) + "°C" + "\n" +
-                "Humidity: " + Math.round(modelWeather.main.getHumidity()) + " % " + "\n" +
-                "Conditions: " + modelWeather.weather[0].get("main") + " / " + modelWeather.weather[0].get("description") + "\n" +
-                "Wind: " + modelWeather.wind.getSpeed() + " m/s ";
+    public String getWeather(String message) throws IOException {
+        ModelWeather weather = requestCurrentWeather(message);
+        return weatherConditions(weather);
     }
 
-
-    private static String requestWeather(String city) throws IOException {
+    private ModelWeather requestCurrentWeather(String city) throws IOException {
         URL url = new URL("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&units=metric&appid=007c1faa456d100d372b5a7a6dd1fa77");
         Scanner scanner = new Scanner((InputStream) url.getContent());
         StringBuilder stringBuilderWeather = new StringBuilder();
         while (scanner.hasNext()) {
-            stringBuilderWeather = stringBuilderWeather.append(scanner.nextLine());
+            stringBuilderWeather.append(scanner.nextLine());
         }
-        resultWeather = stringBuilderWeather.toString();
-        return resultWeather;
+
+        return GSON.fromJson(stringBuilderWeather.toString(), ModelWeather.class);
     }
 
-
-    private static ModelWeather parseWeather(String weather) {
-        Gson gson = new Gson();
-        return modelWeather = gson.fromJson(weather, ModelWeather.class);
-
+    private String weatherConditions(ModelWeather conditions) {
+        return "City : " + conditions.getName() + "\n" +
+                "Temperature : " + Math.round(conditions.main.getTemp()) + "°C" + "\n" +
+                "Humidity : " + Math.round(conditions.main.getHumidity()) + " % " + "\n" +
+                "Description : " + conditions.weather[0].get("main") + " / " + conditions.weather[0].get("description") + "\n" +
+                "Wind : " + conditions.wind.getSpeed() + " m/s ";
     }
+
 }
+
